@@ -32,13 +32,21 @@ def main(config):
     config.time_now = get_time()
 
     if config.mode == 'train':
+        run_name = config.run_name or input("Enter a name for this run: ").strip()
+        run_name = run_name.replace(" ", "_").replace("/", "_")
+        if run_name:
+            folder_name = "{}_{}".format(run_name, config.time_now)
+        else:
+            folder_name = config.time_now
+        config.run_name = run_name
+
         data_loader = get_loader(data_type=config.data_type,
                                  batch_size=config.batch_size,
                                  mode=config.mode,
                                  num_workers=config.num_workers)
 
 
-        shared_path = '{}{}'.format(config.base_path, config.time_now)  
+        shared_path = '{}{}'.format(config.base_path, folder_name)  
 
         config.base_path = shared_path
         config.model_path = "{}/{}".format(shared_path, config.model_path)
@@ -84,18 +92,18 @@ if __name__ == '__main__':
 
     # training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=100)
-    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--sample_size', type=int, default=100) 
     parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--lr', type=float, default=0.002) #og 0.0002
+    parser.add_argument('--lr', type=float, default=0.0002) #og 0.0002
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.99)
     #parser.add_argument('--g_layers', type=int, nargs='+', default=[100, 512, 256, 128, 64, 3])  # network structure of the Generator. First layer (100) is the size of the noise, the last layer (3) is the output size (RGB image in our case)
     #parser.add_argument('--d_layers', type=int, nargs='+', default=[3, 64, 128, 256, 512, 1])  # network structure of the Discriminator. First layer (3) is the input size (RGB image in our case) and the last layer (1) corresponds to the output
-    parser.add_argument('--activation_fn', type=str2bool, default=True)
-    parser.add_argument('--inject_z', type=str2bool, default=True)
-    parser.add_argument('--concat_injection', type=str2bool, default=False)  # whether the injection will be concatenated or multiplied
-    parser.add_argument('--loss', type=str, default='original')  # can be changed to Wassterstein GAN with GP. Just put 'wgan-gp'
+    #parser.add_argument('--activation_fn', type=str2bool, default=True)
+    #parser.add_argument('--inject_z', type=str2bool, default=True)
+    #parser.add_argument('--concat_injection', type=str2bool, default=False)  # whether the injection will be concatenated or multiplied
+    parser.add_argument('--loss', type=str, default='original')  # can be changed to Wassterstein GAN with GP. Just put 'wgan-gp' 'original' is the second option
     parser.add_argument('--gp_weight', type=float, default=10)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--pc_name', type=str, default='neumann')
@@ -105,12 +113,15 @@ if __name__ == '__main__':
     parser.add_argument('--norm', type=str, default='batch')  # can be changed to ``instance'' to activate the instance normalization
 
     # misc
+    #parser.add_argument('--n_critic', type=int, default=5)   # D steps per G step
+
     parser.add_argument('--mode', type=str, default='train', choices=['train', 'sample'])
     parser.add_argument('--model_path', type=str, default='models')
     parser.add_argument('--sample_path', type=str, default='samples')
     parser.add_argument('--logs_path', type=str, default="logs")
     parser.add_argument('--data_type', type=str, default='spiral')
-    parser.add_argument('--base_path', type=str, default='./dcgan_inject/')  # where to save the experiment results
+    parser.add_argument('--base_path', type=str, default='./experiments/')  # where to save the experiment results
+    parser.add_argument('--run_name', type=str, default='')  # optional folder name; prompts if empty
     parser.add_argument('--ckpt_gen_path', type=str, default='')
     parser.add_argument('--log_step', type=int, default=50)
     parser.add_argument('--sample_step', type=int, default=50)

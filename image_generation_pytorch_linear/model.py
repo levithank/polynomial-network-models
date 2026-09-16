@@ -18,10 +18,10 @@ class Generator(nn.Module):
 
     def __init__(
         self,
-        z_dim=1,
-        hidden_dim=64,
+        z_dim=2,
+        hidden_dim=4,
         out_dim=2,
-        num_layers=16,
+        num_layers=2,
 
         activation_fn=True,
         bound_output=False
@@ -135,84 +135,52 @@ class Discriminator(nn.Module):
     ):
         super().__init__()
 
-        # input_dim=2 because every sample contains:
-        # [x_coordinate, y_coordinate]
         self.input_dim = input_dim
 
-        # hidden_dim=128 controls discriminator capacity.
-        # It does not mean the circle has 128 raw features.
+        
         self.hidden_dim = hidden_dim
 
         #again only used to print the config file
         self.use_spectral_norm = use_spectral_norm
 
-        # Helper for optionally adding spectral normalization.
-        #
-        # Spectral normalization can stabilize GAN discriminator
-        # training by controlling the size of the layer weights.
+        
         def make_linear(in_features, out_features):
             layer = nn.Linear(
                 in_features=in_features,
                 out_features=out_features,
                 bias=True
             )
-
             if use_spectral_norm:
                 layer = spectral_norm(layer)
-
             return layer
 
         self.main = nn.Sequential(
-            # First discriminator transformation:
-            #
-            # [batch, 2] -> [batch, 128]
+           
             make_linear(input_dim, hidden_dim),
-
-            # LeakyReLU keeps a small gradient for negative values.
-            # 0.2 is a common GAN discriminator choice.
-            nn.LeakyReLU(
-                negative_slope=0.2,
-                inplace=False
-            ),
-
-            # Second hidden transformation:
-            #
-            # [batch, 128] -> [batch, 128]
+            nn.LeakyReLU(negative_slope=0.2,inplace=False),
             make_linear(hidden_dim, hidden_dim),
+            nn.LeakyReLU(negative_slope=0.2,inplace=False),
+            make_linear(hidden_dim, 1),
+            
 
-            nn.LeakyReLU(
-                negative_slope=0.2,
-                inplace=False
-            ),
 
-            # Final real/fake score:
-            #
-            # [batch, 128] -> [batch, 1]
-            make_linear(hidden_dim, 1)
+            # make_linear(input_dim, hidden_dim),
+            # nn.Sigmoid(),
+            # make_linear(hidden_dim, hidden_dim),
+            # nn.Sigmoid(),
+            # make_linear(hidden_dim, 1),
+            # nn.Sigmoid(),
+
+            # make_linear(input_dim, hidden_dim),
+            # nn.ReLU(),
+            # make_linear(hidden_dim,1),
+            # nn.Sigmoid()
+            
         )
 
     def forward(self, points):
-        """
-        points shape: [batch_size, 2]
-        """
-
-        if points.ndim != 2:
-            raise ValueError(
-                f"Expected points to have shape [batch, 2], "
-                f"but received {tuple(points.shape)}"
-            )
-
-        if points.size(1) != self.input_dim:
-            raise ValueError(
-                f"Expected every point to contain {self.input_dim} "
-                f"coordinates, but received {points.size(1)}"
-            )
-
-        # No Sigmoid here.
-        #
-        # The output is a raw logit. This is preferred when using:
-        #
-        # nn.BCEWithLogitsLoss()
+        
+    
         logits = self.main(points)
 
         return logits

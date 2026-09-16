@@ -16,6 +16,8 @@
 
 **/dcgan_inject/
 
+**/experiments/
+
 # personal testout files.
 personal.py
 

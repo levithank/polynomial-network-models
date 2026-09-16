@@ -44,7 +44,7 @@ class CircleDataset(torch.utils.data.Dataset):
 
 
 class SpiralDataset(torch.utils.data.Dataset):
-    def __init__(self, n_points=10000, start_rad=1.0, num_turns=3, noise=0.0):
+    def __init__(self, n_points=10000, start_rad=1.0, num_turns=2, noise=0.0):
         # angles spanning several full turns so the spiral wraps around
         angles = np.random.uniform(0, num_turns * 2 * np.pi, n_points)
         # radius grows with angle -> Archimedean spiral (r = a + b*theta)
@@ -71,7 +71,7 @@ def get_loader(data_type='spiral', batch_size=64, mode='train',
     try:
         dataset_cls = DATASETS[data_type]
     except KeyError:
-        raise ValueError(f"Unknown dataset '{dataset_type}'. "
+        raise ValueError(f"Unknown dataset '{data_type}'. "
                          f"Choose from: {list(DATASETS)}")
     dataset = dataset_cls(n_points=n_points, **dataset_kwargs)
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size,

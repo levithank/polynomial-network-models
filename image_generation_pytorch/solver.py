@@ -31,6 +31,8 @@ def to_numpy(x):
 
 class Solver(object):
     def __init__(self, config, data_loader):
+        #self.n_critic = config.n_critic
+
         self.data_loader = data_loader
         self.num_epochs = config.num_epochs
         self.sample_size = config.sample_size
@@ -74,6 +76,7 @@ class Solver(object):
         print("  out_dim:", self.generator.out_dim)
         print("  num_orders:", self.generator.num_orders)
         print("  activation:", self.generator.activation)
+        print("  output_activation", self.generator.output_activation)
 
         print("\nDiscriminator configuration:")
         print("  input_dim:", self.discriminator.input_dim)
@@ -107,7 +110,7 @@ class Solver(object):
         os.makedirs(self.sample_path, exist_ok=True)
 
         config = {
-            "generator": {
+            "polynetwork generator": {
                 "z_dim": self.generator.z_dim,
                 "hidden_dim": self.generator.hidden_dim,
                 "out_dim": self.generator.out_dim,
@@ -214,6 +217,7 @@ class Solver(object):
     def sample_z(self, n):
      #uniform noise
      z = 2 * torch.rand(n, self.z_dim) - 1
+     #z = torch.rand(n, self.z_dim)
      return to_cuda(z)
 
     def reset_grad(self):
@@ -252,7 +256,83 @@ class Solver(object):
         plt.tight_layout()
         plt.savefig(path)
         plt.close()
+    # def train(self):
+    #     total_step = len(self.data_loader)
+    #     g_loss_val = 0.0   # last G loss, for logging on iterations where G doesn't step
+    #     for epoch in range(self.num_epochs):
+    #         for i, data in enumerate(self.data_loader):
+    #             data = to_cuda(data)
+    #             batch_size = data.size(0)
 
+    #             # ---------------- train Discriminator (every step) ----------------
+    #             outputs_real = self.discriminator(data)
+    #             z = self.sample_z(batch_size)
+    #             fake_data = self.generator(z)
+    #             outputs_fake = self.discriminator(fake_data.detach())
+
+    #             if self.loss == 'original':
+    #                 real_labels = to_cuda(torch.ones(batch_size, 1))
+    #                 fake_labels = to_cuda(torch.zeros(batch_size, 1))
+    #                 d_loss = (self.criterion(outputs_real, real_labels)
+    #                         + self.criterion(outputs_fake, fake_labels))
+    #             elif self.loss == 'wgan-gp':
+    #                 gp = self.gradient_penalty(data, fake_data)
+    #                 d_loss = -outputs_real.mean() + outputs_fake.mean() + gp
+    #             else:
+    #                 raise ValueError("Unknown loss: {}".format(self.loss))
+
+    #             self.reset_grad()
+    #             d_loss.backward()
+    #             self.d_optimizer.step()
+
+    #             # ---------------- train Generator (every n_critic steps) ----------
+    #             if (i + 1) % self.n_critic == 0:
+    #                 z = self.sample_z(batch_size)
+    #                 fake_data = self.generator(z)
+    #                 outputs_fake = self.discriminator(fake_data)
+
+    #                 if self.loss == 'original':
+    #                     real_labels = to_cuda(torch.ones(batch_size, 1))
+    #                     g_loss = self.criterion(outputs_fake, real_labels)
+    #                 else:
+    #                     g_loss = -outputs_fake.mean()
+
+    #                 self.reset_grad()
+    #                 g_loss.backward()
+    #                 self.g_optimizer.step()
+    #                 g_loss_val = g_loss.item()
+
+    #             # ---------------------- logging -----------------------
+    #             if (i + 1) % self.log_step == 0:
+    #                 print('Epoch [{0:d}/{1:d}], Step [{2:d}/{3:d}], '
+    #                     'd_loss: {4:.4f}, g_loss: {5:.4f}'.format(
+    #                         epoch + 1, self.num_epochs, i + 1,
+    #                         total_step, d_loss.item(), g_loss_val))
+    #                 info = {'d_loss': d_loss.item(), 'g_loss': g_loss_val}
+    #                 for tag, value in info.items():
+    #                     self.logger.scalar_summary(tag, value, epoch * total_step + i + 1)
+
+    #             # -------------------- sampling ------------------------
+    #             if (i + 1) % self.sample_step == 0:
+    #                 with torch.no_grad():
+    #                     samples = to_numpy(self.generator(self.sample_z(self.sample_size)))
+    #                 fig_path = os.path.join(
+    #                     self.sample_path, "epoch_{}_{}.png".format(epoch + 1, i + 1))
+    #                 self.save_scatter(samples, fig_path, real_points=to_numpy(data))
+
+    #             # ------------------- validation -----------------------
+    #             if (i + 1) % self.validation_step == 0:
+    #                 with torch.no_grad():
+    #                     val_points = to_numpy(self.generator(self.sample_z(2048)))
+    #                 npy_path = os.path.join(
+    #                     self.model_path, '{}_{}_val_points.npy'.format(epoch + 1, i + 1))
+    #                 np.save(npy_path, val_points)
+
+    #         if (epoch + 1) % self.save_every == 0:
+    #             g_path = os.path.join(self.model_path, 'generator-{}.pkl'.format(epoch + 1))
+    #             d_path = os.path.join(self.model_path, 'discriminator-{}.pkl'.format(epoch + 1))
+    #             torch.save(self.generator.state_dict(), g_path)
+    #             torch.save(self.discriminator.state_dict(), d_path)
     def train(self):
         total_step = len(self.data_loader)
         for epoch in range(self.num_epochs):
@@ -295,6 +375,11 @@ class Solver(object):
 
                 self.reset_grad()
                 g_loss.backward()
+                
+                #gradient clipping
+                torch.nn.utils.clip_grad_norm_(self.generator.parameters(),max_norm=1.0)
+                
+
                 self.g_optimizer.step()
 
                 # ---------------------- logging -----------------------

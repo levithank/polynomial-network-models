@@ -44,16 +44,18 @@ class CircleDataset(torch.utils.data.Dataset):
 
 
 class SpiralDataset(torch.utils.data.Dataset):
-    def __init__(self, n_points=10000, start_rad=1.0, num_turns=3, noise=0.0):
+    def __init__(self, n_points=50000, start_rad=0.1, num_turns=2, noise=0.0):
         # angles spanning several full turns so the spiral wraps around
         angles = np.random.uniform(0, num_turns * 2 * np.pi, n_points)
         # radius grows with angle -> Archimedean spiral (r = a + b*theta)
-        radius = start_rad + angles
+        growth_rate=0.1
+        radius = start_rad + growth_rate*angles
         x = radius * np.cos(angles)
         y = radius * np.sin(angles)
         pts = np.stack([x, y], axis=1)
         pts += np.random.normal(0, noise, pts.shape)
         self.data = torch.tensor(pts, dtype=torch.float32)
+
 
     def __len__(self):
         return len(self.data)
@@ -61,17 +63,75 @@ class SpiralDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
+
+class SpiralXDataset(torch.utils.data.Dataset):
+   def __init__(self, n_points=10000, start_rad=0.1, num_turns=2, noise=0.0):
+      # angles spanning several full turns so the spiral wraps around
+        angles = np.random.uniform(0, num_turns * 2 * np.pi, n_points)
+        # radius grows with angle -> Archimedean spiral (r = a + b*theta)
+        growth_rate=0.1
+        radius = start_rad + growth_rate*angles
+        x = radius * np.cos(angles)
+        pts = np.stack([angles,x], axis=1)
+        pts += np.random.normal(0, noise, pts.shape)
+        self.data = torch.tensor(pts, dtype=torch.float32)  
+
+   def __len__(self):
+        return len(self.data)
+   def __getitem__(self, idx):
+         return self.data[idx]
+
+
+class SpiralYDataset(torch.utils.data.Dataset):
+   def __init__(self, n_points=10000, start_rad=0.1, num_turns=1, noise=0.0):
+      # angles spanning several full turns so the spiral wraps around
+        angles = np.random.uniform(0, num_turns * 2 * np.pi, n_points)
+        # radius grows with angle -> Archimedean spiral (r = a + b*theta)
+        growth_rate=0.05
+        radius = start_rad + growth_rate*angles
+        y = radius * np.sin(angles)
+        pts = np.stack([angles,y], axis=1)
+        pts += np.random.normal(0, noise, pts.shape)
+
+      
+
+        self.data = torch.tensor(pts, dtype=torch.float32)   
+
+class SinDataset(torch.utils.data.Dataset):
+    def __init__(self, n_points=10000,  noise=0.0):
+        # angles spanning several full turns so the spiral wraps around
+        angles = np.random.uniform(0, 2 * np.pi, n_points)
+        # radius grows with angle -> Archimedean spiral (r = a + b*theta)
+        
+        y = np.sin(angles)
+        pts = np.stack([angles,y], axis=1)
+        pts += np.random.normal(0, noise, pts.shape)
+
+        
+
+        self.data = torch.tensor(pts, dtype=torch.float32)   
+
+    def __len__(self):
+         return len(self.data)
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+        
+
 DATASETS = {
     'circle': CircleDataset,
     'spiral': SpiralDataset,
+    'spiralx': SpiralXDataset,
+    'spiraly': SpiralYDataset,
+    'sin': SinDataset,
 }
 
-def get_loader(data_type='spiral', batch_size=64, mode='train',
+def get_loader(data_type='circle', batch_size=64, mode='train',
                num_workers=0, n_points=10000, **dataset_kwargs):
     try:
         dataset_cls = DATASETS[data_type]
     except KeyError:
-        raise ValueError(f"Unknown dataset '{dataset_type}'. "
+        raise ValueError(f"Unknown dataset '{data_type}'. "
                          f"Choose from: {list(DATASETS)}")
     dataset = dataset_cls(n_points=n_points, **dataset_kwargs)
     return torch.utils.data.DataLoader(dataset, batch_size=batch_size,

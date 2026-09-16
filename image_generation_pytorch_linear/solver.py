@@ -107,8 +107,8 @@ class Solver(object):
         os.makedirs(self.sample_path, exist_ok=True)
 
         config = {
-            "generator": {
-                "Linear Model"
+
+            "Linear Model generator": {
                 "z_dim": self.generator.z_dim,
                 "hidden_dim": self.generator.hidden_dim,
                 "out_dim": self.generator.out_dim,
@@ -296,6 +296,11 @@ class Solver(object):
 
                 self.reset_grad()
                 g_loss.backward()
+
+                #grad clipping
+                torch.nn.utils.clip_grad_norm_(self.generator.parameters(),max_norm=1.0)
+
+                
                 self.g_optimizer.step()
 
                 # ---------------------- logging -----------------------
