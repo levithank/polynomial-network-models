@@ -1,68 +1,50 @@
-=======================================
-Π-nets: Deep Polynomial Neural Networks
-=======================================
+=====================================================================
+Π-nets vs. MLPs: A Comparative Analysis of Deep Polynomial Networks
+=====================================================================
 
-Pytorch implementation of the image generation as described on the CVPR'20 paper "**Π-nets: Deep Polynomial Neural Networks**".
+A PyTorch implementation and comparative study of the image generation
+experiments described in the CVPR 2020 paper
+**"Π-nets: Deep Polynomial Neural Networks"** [1]_. Two toy datasets
+(a circle and a spiral) are used to compare how well each architecture
+learns the target distribution.
 
-Specifically, we include the code for image generation on Cifar10 images.
-
-
-
-Browsing the folders
+Repository Structure
 ====================
-The folder structure is the following:
 
-*    ``data``: The folder that contains the data for Cifar10. If it has not been downloaded and extracted already, it will be downloaded during the first run.
+* ``image_generation_chainer/`` – Runs the original Chainer implementation
+  from [1]_, along with an updated ``.yml`` file listing the (older)
+  package versions it requires.
+* ``image_generation_pytorch_mlp/`` – PyTorch implementation of the
+  baseline MLP architecture.
+* ``image_generation_pytorch_pnet/`` – PyTorch implementation of the
+  Π-net architecture.
 
-*    ``FID``: The folder that contains the core code for computing the FID scores.
+Training
+========
 
-*    ``IS``: The folder that contains the core code for computing the IS scores.
+From inside the folder of the model you want to train, run:
 
-
-Train the network
-=================
-
-First download the following file:
-
-https://www.doc.ic.ac.uk/~sm3515/cifar_10_stats.pkl
-
-We will need this file to calculate the FID score for Cifar10. We have pre-computed the first/second order statistics for Cifar10 database to expedite the training process (so that we do not need to process and extract statistics from the Cifar10 images each time we need to compute the FID score during the validation).
-
-To train the network, you can execute the following command:
+.. code-block:: bash
 
    python main.py
-
-The file main.py contains many hyper-parameters which can be either passed as arguments upon the execution of the command above or you can edit the file itself with the hyper-parameters of your liking. If you will be using the default hyper-parameters, the experiments will be saved in the folder dcgan_inject, in the current working directory.
-
-
 
 Requirements
 ============
 
-The code was tested on a Linux machine and requires the following packages/versions to run.
+Each folder contains a ``.yml`` file listing all required packages. The
+MLP and Π-net folders share the same environment.
 
-* python 3.5 with cuda toolkit and cuda  10 (if you intend on running on a GPU) 
+To create the environment:
 
-* tensorflow 1.15
+.. code-block:: bash
 
-* pytorch 1.2
+   conda env create -f <environment>.yml
 
-* torchvision 0.4
-
-* scipy 1.1.0
-
-
-Snippets of the code are borrowed by the official pytorch DCGAN implementation [1].
-
-The codes for the IS and FID scores are borrowed from [2] and [3], respectively. We should point out that the FID/IS scores that are mentioned in the paper may be slightly different to the ones calculated here since for the paper scores, after having extracted the best network, we run the official Tensorflow FID/IS scores implementations and report those, in order to be consistent throughout the whole set of experiments and frameworks (chainer, pytorch, etc.).
+Experiments were run in a Miniconda environment on WSL2.
 
 References
 ==========
 
-.. [1] https://github.com/pytorch/examples/tree/master/dcgan
-
-.. [2] https://github.com/sbarratt/inception-score-pytorch 
-
-.. [3] https://github.com/mseitzer/pytorch-fid
- 
-
+.. [1] G. Chrysos, S. Moschoglou, G. Bouritsas, Y. Panagakis, J. Deng,
+   and S. Zafeiriou, "Π-nets: Deep Polynomial Neural Networks," *CVPR*,
+   2020. Code: https://github.com/grigorisg9gr/polynomial_nets

@@ -107,7 +107,7 @@ class Generator(nn.Module):
             #       (S_n^T x_(n-1) + B_n^T b_n)
             x = az * (sx + bb)
            
-            #x=self.activation(x)
+            x=self.activation(x)
 
         # f(z) = Q x_k + psi
         return self.output_activation(self.out(x))
